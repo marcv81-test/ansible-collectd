@@ -1,0 +1,64 @@
+---
+
+- name: Packages list is up to date (if cache expired)
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Pip is installed
+  apt:
+    name: python-pip
+
+- name: Python dependencies are installed
+  pip:
+    name: "{{item}}"
+  with_items:
+  - pycrypto
+  - configparser
+
+- name: collectd_proxy is installed
+  git:
+    repo: https://github.com/marcv81/collectd_proxy
+    dest: /opt/collectd_proxy
+
+- name: Group exists
+  group:
+    name: collectd_proxy
+    state: present
+
+- name: User exists
+  user:
+    name: collectd_proxy
+    group: collectd_proxy
+    state: present
+
+- name: Configuration directory exists
+  file:
+    path: /etc/collectd_proxy
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Configuration is installed
+  template:
+    src: collectd_proxy.ini
+    dest: /etc/collectd_proxy/collectd_proxy.ini
+    owner: collectd_proxy
+    group: collectd_proxy
+    mode: 0600
+
+- name: Service is installed
+  template:
+    src: collectd_proxy.service
+    dest: /etc/systemd/system/collectd_proxy.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reload daemon
+
+- name: Service is started and enabled
+  service:
+    name: collectd_proxy.service
+    state: started
+    enabled: yes

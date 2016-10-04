@@ -1,0 +1,81 @@
+---
+
+- name: Packages key is installed
+  apt_key:
+    data: "{{ lookup('file', 'influxdb.key') }}"
+    state: present
+
+- name: Packages list is installed
+  copy:
+    src: influxdb.list
+    dest: /etc/apt/sources.list.d/influxdb.list
+    owner: root
+    group: root
+    mode: 0644
+  register: influxdb_apt_sources
+
+- name: Packages list is up to date (if sources were added)
+  apt:
+    update_cache: yes
+  when: influxdb_apt_sources.changed
+
+- name: Packages list is up to date (if cache expired)
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: InfluxDB is installed
+  apt:
+    name: "{{item}}"
+    state: present
+  with_items:
+  - influxdb
+  - collectd
+
+- name: InfluxDB is started and enabled
+  service:
+    name: influxdb
+    state: started
+    enabled: yes
+
+- name: InfluxDB is up
+  wait_for:
+    port: 8086
+
+- name: Admin user exists
+  command: >
+    curl -X POST 'http://localhost:8086/query' --data-urlencode "q={{item}}"
+  with_items:
+  - "CREATE USER {{influxdb_admin_user}} WITH PASSWORD '{{influxdb_admin_password}}' WITH ALL PRIVILEGES"
+  args:
+    warn: no
+  changed_when: false
+
+- name: Configuration is installed
+  template:
+    src: influxdb.conf
+    dest: /etc/influxdb/influxdb.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart InfluxDB
+
+- meta: flush_handlers
+
+- name: InfluxDB is up
+  wait_for:
+    port: 8086
+
+- name: Database and users exist
+  command: >
+    curl -X POST 'http://localhost:8086/query' --data-urlencode "q={{item}}"
+    --user {{influxdb_admin_user}}:{{influxdb_admin_password}}
+  with_items:
+  - "CREATE DATABASE collectd_db"
+  - "CREATE USER {{influxdb_collectd_user}} WITH PASSWORD '{{influxdb_collectd_password}}'"
+  - "CREATE USER {{influxdb_grafana_user}} WITH PASSWORD '{{influxdb_grafana_password}}'"
+  - "GRANT ALL ON collectd_db TO {{influxdb_collectd_user}}"
+  - "GRANT READ ON collectd_db TO {{influxdb_grafana_user}}"
+  args:
+    warn: no
+  changed_when: false

@@ -1,0 +1,78 @@
+---
+
+- name: Packages key is installed
+  apt_key:
+    data: "{{ lookup('file', 'grafana.key') }}"
+    state: present
+
+- name: Packages list is installed
+  copy:
+    src: grafana.list
+    dest: /etc/apt/sources.list.d/grafana.list
+    owner: root
+    group: root
+    mode: 0644
+  register: grafana_apt_sources
+
+- name: Packages list is up to date (if sources were added)
+  apt:
+    update_cache: yes
+  when: grafana_apt_sources.changed
+
+- name: Packages list is up to date (if cache expired)
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Grafana is installed
+  apt:
+    name: grafana
+
+- name: Load collectd clients list from InfluxDB
+  command: >
+    curl -X POST 'http://localhost:8086/query' --data-urlencode 'db=collectd_db'
+    --user {{influxdb_grafana_user}}:{{influxdb_grafana_password}}
+    --data-urlencode 'q=SHOW TAG VALUES WITH KEY = "host"'
+  register: collectd_hosts_raw
+  args:
+    warn: no
+  changed_when: false
+
+- name: Set collectd clients list fact
+  set_fact:
+    collectd_hosts: "{{ collectd_hosts_raw.stdout | influxdb_tag }}"
+
+- name: Configuration is installed
+  template:
+    src: grafana.ini
+    dest: /etc/grafana/grafana.ini
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reconfigure Grafana
+
+- name: Datasource definition is available
+  template:
+    src: datasource.json
+    dest: /root/datasource.json
+    owner: root
+    group: root
+    mode: 0600
+  notify: Reconfigure Grafana
+
+- name: Dashboard definition is available
+  template:
+    src: dashboard.json
+    dest: /root/dashboard.json
+    owner: root
+    group: root
+    mode: 0600
+  notify: Reconfigure Grafana
+
+- meta: flush_handlers
+
+- name: Grafana is started and enabled
+  service:
+    name: grafana-server
+    state: started
+    enabled: yes

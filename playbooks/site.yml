@@ -1,0 +1,11 @@
+---
+
+- hosts: collectd_client
+  gather_facts: no
+  roles:
+  - collectd_client
+
+- hosts: collectd_server
+  gather_facts: no
+  roles:
+  - collectd_server

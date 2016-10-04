@@ -1,0 +1,27 @@
+---
+
+- name: Packages list is up to date (if cache expired)
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: collecd is installed
+  apt:
+    name: collectd
+
+- name: Configuration is up to date
+  template:
+    src: collectd.conf
+    dest: /etc/collectd/collectd.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart collectd
+
+- meta: flush_handlers
+
+- name: collectd is started and enabled
+  service:
+    name: collectd
+    state: started
+    enabled: yes

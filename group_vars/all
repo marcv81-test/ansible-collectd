@@ -1,0 +1,19 @@
+---
+
+# Database admin
+influxdb_admin_user: admin
+influxdb_admin_password: admin
+
+# Database users
+influxdb_collectd_user: collectd
+influxdb_collectd_password: collectd
+influxdb_grafana_user: grafana
+influxdb_grafana_password: grafana
+
+# collectd encryption
+collectd_proxy_user: proxy
+collectd_proxy_password: proxy
+
+# Grafana admin
+grafana_admin_user: admin
+grafana_admin_password: admin

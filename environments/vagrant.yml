@@ -1,0 +1,21 @@
+---
+
+hosts:
+  collectd-01:
+    box: marcv81/xenial64
+    ip: 192.168.56.101
+    memory: 512
+  collectd-02:
+    box: marcv81/xenial64
+    ip: 192.168.56.102
+    memory: 512
+
+groups:
+  collectd_server:
+    hosts:
+    - collectd-01
+    - collectd-02
+  collectd_client:
+    hosts:
+    - collectd-01
+    - collectd-02

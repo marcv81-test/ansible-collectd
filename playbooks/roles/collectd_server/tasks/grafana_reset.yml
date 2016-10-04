@@ -1,0 +1,38 @@
+---
+
+- name: Service is stopped
+  service:
+    name: grafana-server
+    state: stopped
+
+- name: Settings are reset
+  file:
+    path: /var/lib/grafana/grafana.db
+    state: absent
+
+- name: Service is started
+  service:
+    name: grafana-server
+    state: started
+
+- name: Grafana is up
+  wait_for:
+    port: 3000
+
+- name: Datasource is available
+  command: >
+    curl -X POST 'http://localhost:3000/api/datasources'
+    --user {{grafana_admin_user}}:{{grafana_admin_password}}
+    --header 'Content-Type: application/json'
+    --data-binary '@/root/datasource.json'
+  args:
+    warn: no
+
+- name: Dashboard is available
+  command: >
+    curl -X POST 'http://localhost:3000/api/dashboards/db'
+    --user {{grafana_admin_user}}:{{grafana_admin_password}}
+    --header 'Content-Type: application/json'
+    --data-binary '@/root/dashboard.json'
+  args:
+    warn: no
