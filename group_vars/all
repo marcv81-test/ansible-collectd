@@ -11,8 +11,8 @@ influxdb_grafana_user: grafana
 influxdb_grafana_password: grafana
 
 # collectd encryption
-collectd_proxy_user: proxy
-collectd_proxy_password: proxy
+collectd_user: collectd
+collectd_password: collectd
 
 # Grafana admin
 grafana_admin_user: admin

@@ -5,8 +5,5 @@
     name: influxdb
     state: restarted
 
-- name: Reload systemd daemon
-  command: systemctl daemon-reload
-
 - name: Reconfigure Grafana
   include: grafana_reset.yml

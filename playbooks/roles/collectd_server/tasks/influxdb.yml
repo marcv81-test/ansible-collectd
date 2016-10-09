@@ -1,14 +1,9 @@
 ---
 
-- name: Packages key is installed
-  apt_key:
-    data: "{{ lookup('file', 'influxdb.key') }}"
-    state: present
-
 - name: Packages list is installed
   copy:
-    src: influxdb.list
-    dest: /etc/apt/sources.list.d/influxdb.list
+    src: marcv81.list
+    dest: /etc/apt/sources.list.d/marcv81.list
     owner: root
     group: root
     mode: 0644
@@ -24,13 +19,16 @@
     update_cache: yes
     cache_valid_time: 3600
 
+- name: collectd is installed (for types.db)
+  apt:
+    name: collectd
+    state: present
+
 - name: InfluxDB is installed
   apt:
-    name: "{{item}}"
+    name: influxdb
     state: present
-  with_items:
-  - influxdb
-  - collectd
+    force: yes
 
 - name: InfluxDB is started and enabled
   service:
@@ -50,6 +48,14 @@
   args:
     warn: no
   changed_when: false
+
+- name: Authentication file is installed
+  template:
+    src: auth_file
+    dest: /etc/collectd/auth_file
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Configuration is installed
   template:
